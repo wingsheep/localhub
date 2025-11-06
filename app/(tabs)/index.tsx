@@ -1,84 +1,74 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { supabase } from '@/lib/supabase';
+import { FlashList } from '@shopify/flash-list';
+import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, View, } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+type Product = { id: string; title: string; price: number; photos: string[]; created_at: string }
 
 export default function HomeScreen() {
+  
+  
+  const PAGE_SIZE = 15
+  
+  async function fetchProductsPage(cursor?: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+    let q = supabase.from('products')
+      .select('id, title, price, photos, created_at', )
+      .order('created_at', { ascending: false })
+      .limit(PAGE_SIZE)
+      
+  
+    if (cursor) q = q.lt('created_at', cursor)
+  
+    const { data, error } = await q
+    if (error) throw error
+    return data as Product[]
+  }
+  
+  const query = useInfiniteQuery<Product[], Error, InfiniteData<Product[], string | undefined>, string[], string | undefined>({
+    queryKey: ['products'],
+    queryFn: ({ pageParam }) => fetchProductsPage(pageParam as string | undefined),
+    getNextPageParam: (lastPage) => lastPage.length < PAGE_SIZE
+      ? undefined
+      : lastPage[lastPage.length - 1].created_at, // 作为下一页 cursor
+    initialPageParam: undefined,
+  })
+  const items: Product[] = query.data?.pages.flat() ?? []
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <FlashList
+        data={items}
+        keyExtractor={(item) => item.id}
+        onEndReached={() => {
+          if (query.hasNextPage) query.fetchNextPage()
+        }}
+        
+        refreshing={query.isRefetching}
+        onRefresh={() => query.refetch()}
+        renderItem={({ item }) => <ProductCard item={item} />}
+      />
+    </SafeAreaView>
   );
 }
-
+function ProductCard({ item }: { item: Product }) {
+  return (
+    <Pressable onPress={() => router.push({ pathname: '/product/[id]', params: { id: item.id } })}>
+      <View style={{ flexDirection: 'row', padding: 8 }}>
+        {item.photos?.[0] ? (
+          <Image source={{ uri: item.photos[0] }} style={{ width: 80, height: 80 }} />
+        ) : null}
+        <ThemedText>{item.title} - ￥{item.price}</ThemedText>
+      </View>
+    </Pressable>
+  )
+}
 const styles = StyleSheet.create({
+  container: { flex: 1, paddingHorizontal: 16 },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
