@@ -1,6 +1,7 @@
 import { publicUrl, supabase } from '@/lib/supabase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, Alert, Button, Image, Keyboard, StyleSheet, Text, TextInput, TouchableWithoutFeedback } from 'react-native';
@@ -119,36 +120,53 @@ export default function ProfileScreen() {
     }
     Alert.alert('更新成功！')
   }
+
+
+  // 测试按钮事件
+  async function testLocalNotification() {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '测试通知',
+        body: '这是本地通知',
+        data: { screen: 'product/041c2040-ba50-425b-8f3a-8d1ac0404bae' },
+      },
+      trigger: null, // 立即触发
+    })
+  }
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-       <Controller
-        control={control}
-        name="name"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
-            placeholder="名称"
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
-            returnKeyType="done"
-            onSubmitEditing={Keyboard.dismiss}
-            style={{ width:'100%', color: '#ccc', borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8, marginTop:12 }}
-          />
-        )}
-      />
-      {errors.root && <Text style={{ color:'red', marginTop:8 }}>{errors.root.message}</Text>}
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <Controller
+          control={control}
+          name="name"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              placeholder="名称"
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
+              style={{ width:'100%', color: '#ccc', borderWidth:1, borderColor:'#ddd', padding:12, borderRadius:8, marginTop:12 }}
+            />
+          )}
+        />
+        {errors.root && <Text style={{ color:'red', marginTop:8 }}>{errors.root.message}</Text>}
 
-      
-      <Button title="Pick an image from camera roll" disabled={isUploading} onPress={pickImage} />
-      <ActivityIndicator animating={isUploading} />
-      {image && <Image source={{ uri: image }} style={styles.image} />}
-      <Button
-        title={isSubmitting ? '修改中…' : '更新'}
-        onPress={handleSubmit(onSubmit)}
-        disabled={isSubmitting}
-      />
-    </SafeAreaView>
+        
+        <Button title="Pick an image from camera roll" disabled={isUploading} onPress={pickImage} />
+        <ActivityIndicator animating={isUploading} />
+        {image && <Image source={{ uri: image }} style={styles.image} />}
+        <Button
+          title={isSubmitting ? '修改中…' : '更新'}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isSubmitting}
+        />
+        <Button
+          title='测试通知'
+          onPress={testLocalNotification}
+        />
+      </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 }

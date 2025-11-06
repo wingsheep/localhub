@@ -4,6 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useNotificationRouter } from '@/hooks/useNotificationRouter';
+import { useRegisterPushToken } from '@/hooks/useRegisterPushToken';
 import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -13,6 +15,8 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  useRegisterPushToken()
+  useNotificationRouter()
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const router = useRouter();
   const segments = useSegments();
