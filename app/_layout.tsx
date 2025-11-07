@@ -10,11 +10,31 @@ import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://ed3972ba149f03ed2f81b03819a122b1@o4510321395564544.ingest.us.sentry.io/4510321396809728',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
 export const unstable_settings = {
   anchor: '(tabs)',
 };
-
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   useRegisterPushToken()
   useNotificationRouter()
   const [session, setSession] = useState<Session | null | undefined>(undefined)
@@ -66,4 +86,4 @@ export default function RootLayout() {
       </ThemeProvider>
     </QueryClientProvider>
   );
-}
+});

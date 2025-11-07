@@ -4,9 +4,8 @@ import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View, } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 type Product = { id: string; title: string; price: number; photos: string[]; created_at: string }
 
 export default function HomeScreen() {
